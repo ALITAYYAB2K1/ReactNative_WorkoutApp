@@ -1,12 +1,14 @@
-import { Link } from "expo-router";
+import { useAuth } from "@/lib/auth-context";
 import { StyleSheet, Text, View } from "react-native";
+import { Button } from "react-native-paper";
 export default function Index() {
+  const { signOut } = useAuth();
   return (
     <View style={styles.view}>
       <Text>Edit app/index.tsx to edit this screen.</Text>
-      <Link href="/Login" style={styles.navButton}>
-        Login{" "}
-      </Link>
+      <Button onPress={signOut} mode="text" icon={"logout"}>
+        SignOut
+      </Button>
     </View>
   );
 }

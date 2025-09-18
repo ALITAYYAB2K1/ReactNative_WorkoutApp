@@ -42,6 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       await account.createEmailPasswordSession(email, password);
+      const session = await account.get();
+      setUser(session);
       return null;
     } catch (error) {
       if (error instanceof Error) {
@@ -50,9 +52,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return "An unknown error occurred while signing in.";
     }
   };
+  const signOut = async () => {
+    try {
+      await account.deleteSession("current");
+      setUser(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isloadingUser, signUp, signIn }}>
+    <AuthContext.Provider
+      value={{ user, isloadingUser, signUp, signIn, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
