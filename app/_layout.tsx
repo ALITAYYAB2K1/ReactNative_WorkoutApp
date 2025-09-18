@@ -34,18 +34,3 @@ export default function RootLayout() {
     </>
   );
 }
-
-            </RouteGuard>
-          </SafeAreaProvider>
-        </PaperProvider>
-      </AuthProvider>
-    </>
-  );
-}
-
-          </RouteGuard>
-        </SafeAreaProvider>
-      </AuthProvider>
-    </>
-  );
-}
