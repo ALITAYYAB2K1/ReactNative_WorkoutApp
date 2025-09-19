@@ -16,8 +16,8 @@ function HeaderSignOut() {
       }}
       accessibilityRole="button"
     >
-      <MaterialCommunityIcons name="logout" size={20} color="#6200ee" />
-      <Text style={{ color: "#6200ee", marginLeft: 6 }}>SignOut</Text>
+      <MaterialCommunityIcons name="logout" size={20} color="#a6270dff" />
+      <Text style={{ color: "#a6270dff", marginLeft: 6 }}>SignOut</Text>
     </TouchableOpacity>
   );
 }

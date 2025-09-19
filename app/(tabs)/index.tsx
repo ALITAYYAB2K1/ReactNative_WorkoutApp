@@ -70,46 +70,55 @@ export default function Index() {
     };
   }, [user?.$id]);
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
-      <View style={styles.container}>
-        {habits?.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text variant="bodyMedium" style={styles.emptyStateText}>
-              No habits found. Add some!
-            </Text>
-          </View>
-        ) : (
-          habits?.map((habit, key) => (
-            <Surface key={key} style={styles.card} elevation={0}>
-              <View style={styles.cardContent}>
-                <Text variant="bodyMedium" style={styles.cardTitle}>
-                  {habit.title}
-                </Text>
-                <Text style={styles.cardDescription}>{habit.description}</Text>
-                <View style={styles.cardFooter}>
-                  <View style={styles.streakBadge}>
-                    <MaterialCommunityIcons
-                      name="fire"
-                      size={20}
-                      color={"#ff9800"}
-                    />
-                    <Text style={styles.streakText}>
-                      {habit.streak_count} day streak
-                    </Text>
-                  </View>
-                  <View style={styles.frequencyBadge}>
-                    <Text style={styles.frequencyText}>
-                      {habit.frequency.charAt(0).toUpperCase() +
-                        habit.frequency.slice(1)}
-                    </Text>
+    <>
+      <View style={styles.header}>
+        <Text variant="headlineMedium" style={styles.headerText}>
+          Your Habits
+        </Text>
+      </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.container}>
+          {habits?.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text variant="bodyMedium" style={styles.emptyStateText}>
+                No habits found. Add some!
+              </Text>
+            </View>
+          ) : (
+            habits?.map((habit, key) => (
+              <Surface key={key} style={styles.card} elevation={0}>
+                <View style={styles.cardContent}>
+                  <Text variant="bodyMedium" style={styles.cardTitle}>
+                    {habit.title}
+                  </Text>
+                  <Text style={styles.cardDescription}>
+                    {habit.description}
+                  </Text>
+                  <View style={styles.cardFooter}>
+                    <View style={styles.streakBadge}>
+                      <MaterialCommunityIcons
+                        name="fire"
+                        size={20}
+                        color={"#ff9800"}
+                      />
+                      <Text style={styles.streakText}>
+                        {habit.streak_count} day streak
+                      </Text>
+                    </View>
+                    <View style={styles.frequencyBadge}>
+                      <Text style={styles.frequencyText}>
+                        {habit.frequency.charAt(0).toUpperCase() +
+                          habit.frequency.slice(1)}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            </Surface>
-          ))
-        )}
-      </View>
-    </ScrollView>
+              </Surface>
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
@@ -131,7 +140,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   container: { flex: 1, padding: 16, backgroundColor: "#f5f5f5" },
-  header: { marginBottom: 16 },
+  header: { marginBottom: 16, justifyContent: "center", alignItems: "center" },
   title: { fontWeight: "bold" },
   emptyState: {
     flex: 1,
@@ -175,4 +184,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   frequencyText: { color: "#2a4cb4ff", fontWeight: "bold" },
+  headerText: { fontWeight: "bold" },
 });

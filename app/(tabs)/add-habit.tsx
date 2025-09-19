@@ -49,6 +49,7 @@ export default function AddHabitScreen() {
   };
   return (
     <View style={styles.container}>
+      <Text style={styles.title}>Add a new habit</Text>
       <TextInput
         label="Title"
         mode="outlined"
@@ -106,4 +107,10 @@ const styles = StyleSheet.create({
   frequencyLabel: { marginBottom: 8 },
   button: { marginTop: 12 },
   segmentedButtons: { width: "100%" },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 24,
+    textAlign: "center",
+  },
 });
