@@ -3,20 +3,30 @@ import {
   DATABASE_ID,
   databases,
   HABITS_COLLECTION_ID,
+  HABITS_COMPLETION_ID,
   RealTimeResponse,
 } from "@/lib/appwrite";
 import { useAuth } from "@/lib/auth-context";
 import { Habit } from "@/types/database.type";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
-import { Query } from "react-native-appwrite";
+import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { ID, Query } from "react-native-appwrite";
 import { Swipeable } from "react-native-gesture-handler";
-import { Surface, Text } from "react-native-paper";
+import { Snackbar, Surface, Text } from "react-native-paper";
 export default function Index() {
   const { user } = useAuth();
   const [habits, setHabits] = useState<Habit[]>();
   const SwipeableRef = useRef<{ [key: string]: Swipeable | null }>({});
+  const [snackbar, setSnackbar] = useState<{
+    visible: boolean;
+    message: string;
+  }>({
+    visible: false,
+    message: "",
+  });
+  const showSnackbar = (message: string) =>
+    setSnackbar({ visible: true, message });
   useEffect(() => {
     const userId = user?.$id;
     // If logged out, clear habits and skip subscriptions/fetches
@@ -72,6 +82,117 @@ export default function Index() {
     };
   }, [user?.$id]);
 
+  const handleDeleteHabit = async (id: string) => {
+    if (!user) return;
+    try {
+      await databases.deleteDocument(DATABASE_ID, HABITS_COLLECTION_ID, id);
+    } catch (error) {
+      console.error("Failed to delete habit:", error);
+    }
+  };
+  const handleCompleteHabit = async (habitId: string) => {
+    if (!user) return;
+    const userId = user.$id;
+    if (!HABITS_COMPLETION_ID) {
+      Alert.alert(
+        "Missing configuration",
+        "EXPO_PUBLIC_HABITS_COMPLETION_ID is not set. Add it to your .env with your Appwrite habit_completions collection ID, then reload."
+      );
+      return;
+    }
+    const now = new Date();
+    const habit = habits?.find((h) => h.$id === habitId);
+    const frequency = habit?.frequency?.toLowerCase?.() ?? "daily";
+    // Compute period window based on frequency
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    if (frequency === "weekly") {
+      const day = start.getDay(); // 0-6 (Sun-Sat)
+      const diffToMonday = (day + 6) % 7; // days since Monday
+      start.setDate(start.getDate() - diffToMonday);
+      end.setTime(start.getTime());
+      end.setDate(start.getDate() + 7);
+    } else if (frequency === "monthly") {
+      start.setDate(1);
+      end.setTime(start.getTime());
+      end.setMonth(start.getMonth() + 1);
+    } else {
+      // daily
+      end.setDate(start.getDate() + 1);
+    }
+
+    try {
+      // 1) Guard: has this habit already been completed today?
+      const existing = await databases.listDocuments(
+        DATABASE_ID,
+        HABITS_COMPLETION_ID,
+        [
+          Query.equal("user_id", userId),
+          Query.equal("habit_id", habitId),
+          Query.greaterThanEqual("completed_at", start.toISOString()),
+          Query.lessThan("completed_at", end.toISOString()),
+        ]
+      );
+      if (existing.total && existing.total > 0) {
+        // Already completed in this period; show feedback and exit
+        showSnackbar(
+          frequency === "weekly"
+            ? "Already completed this week"
+            : frequency === "monthly"
+            ? "Already completed this month"
+            : "Already completed today"
+        );
+        SwipeableRef.current[habitId]?.close();
+        return;
+      }
+
+      // 2) Optimistic UI update
+      setHabits((prev) =>
+        prev?.map((h) =>
+          h.$id === habitId
+            ? {
+                ...h,
+                streak_count: h.streak_count + 1,
+                last_completed: now.toISOString(),
+              }
+            : h
+        )
+      );
+
+      // 3) Create completion record
+      await databases.createDocument(
+        DATABASE_ID,
+        HABITS_COMPLETION_ID,
+        ID.unique(),
+        {
+          habit_id: habitId,
+          completed_at: now.toISOString(),
+          user_id: userId,
+        }
+      );
+
+      // 4) Update habit streak in DB (triggers realtime refresh too)
+      const habit = habits?.find((h) => h.$id === habitId);
+      const currentStreak = habit ? habit.streak_count + 1 : undefined;
+      await databases.updateDocument(
+        DATABASE_ID,
+        HABITS_COLLECTION_ID,
+        habitId,
+        {
+          ...(currentStreak !== undefined
+            ? { streak_count: currentStreak }
+            : {}),
+          last_completed: now.toISOString(),
+        }
+      );
+    } catch (error) {
+      console.error("Failed to complete habit:", error);
+    } finally {
+      SwipeableRef.current[habitId]?.close();
+    }
+  };
+
   const renderLeftActions = () => (
     <View style={styles.swipeActionLeft}>
       <MaterialCommunityIcons
@@ -106,9 +227,9 @@ export default function Index() {
               </Text>
             </View>
           ) : (
-            habits?.map((habit, key) => (
+            habits?.map((habit) => (
               <Swipeable
-                key={key}
+                key={habit.$id}
                 ref={(ref) => {
                   SwipeableRef.current[habit.$id] = ref;
                 }}
@@ -116,6 +237,14 @@ export default function Index() {
                 overshootRight={false}
                 renderLeftActions={renderLeftActions}
                 renderRightActions={renderRightActions}
+                onSwipeableOpen={(direction) => {
+                  if (direction === "left") {
+                    handleDeleteHabit(habit.$id);
+                  } else if (direction === "right") {
+                    handleCompleteHabit(habit.$id);
+                  }
+                  SwipeableRef.current[habit.$id]?.close();
+                }}
               >
                 <Surface style={styles.card} elevation={0}>
                   <View style={styles.cardContent}>
@@ -150,6 +279,13 @@ export default function Index() {
           )}
         </View>
       </ScrollView>
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: "" })}
+        duration={2000}
+      >
+        {snackbar.message}
+      </Snackbar>
     </>
   );
 }
