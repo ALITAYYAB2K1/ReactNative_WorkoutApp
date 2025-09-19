@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { createContext, useContext, useEffect, useState } from "react";
 import { ID, Models } from "react-native-appwrite";
 import { account } from "./appwrite";
@@ -55,6 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await account.deleteSession("current");
+      router.replace("/auth");
       setUser(null);
     } catch (error) {
       console.error("Error signing out:", error);

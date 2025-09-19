@@ -1,5 +1,26 @@
+import { useAuth } from "@/lib/auth-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { TouchableOpacity } from "react-native";
+import { Text } from "react-native-paper";
+
+function HeaderSignOut() {
+  const { signOut } = useAuth();
+  return (
+    <TouchableOpacity
+      onPress={signOut}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        paddingHorizontal: 8,
+      }}
+      accessibilityRole="button"
+    >
+      <MaterialCommunityIcons name="logout" size={20} color="#6200ee" />
+      <Text style={{ color: "#6200ee", marginLeft: 6 }}>SignOut</Text>
+    </TouchableOpacity>
+  );
+}
 export default function TabsLayout() {
   return (
     <>
@@ -21,6 +42,7 @@ export default function TabsLayout() {
           name="index"
           options={{
             title: "Today's Habits",
+            headerRight: () => <HeaderSignOut />,
             tabBarIcon: ({ color, size }) => (
               <MaterialCommunityIcons
                 name="calendar-today"
